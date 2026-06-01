@@ -1,0 +1,27 @@
+# Environment variables — NEVER commit
+.env
+*.env
+
+# Cache files — contain customer data
+faq_cache.json
+
+# Backup files
+*.backup
+*.bak
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+venv/
+.venv/
+
+# Install scripts
+install_agent*.sh
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

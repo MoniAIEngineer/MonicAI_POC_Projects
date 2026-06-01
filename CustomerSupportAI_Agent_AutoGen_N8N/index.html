@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>SmartHome Pro X200 — AI Support Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;500&display=swap');
+:root{--bg:#0b0e1a;--panel:#0d1224;--border:#1e293b;--hdr:#070a14;
+  --c1:#3b82f6;--c2:#4ade80;--c3:#f87171;--c4:#facc15;--c5:#a78bfa;--c6:#38bdf8;--c7:#fb923c;
+  --text:#f1f5f9;--muted:#64748b;--soft:#94a3b8;}
+*{box-sizing:border-box;margin:0;padding:0;}
+body{background:var(--bg);font-family:'IBM Plex Sans',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+
+header{background:var(--hdr);border-bottom:1px solid var(--border);padding:11px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.logo{display:flex;align-items:center;gap:12px;}
+.logo-icon{width:34px;height:34px;background:var(--c1);border-radius:8px;display:grid;place-items:center;font-size:17px;}
+.logo h1{font-family:'Rajdhani',sans-serif;font-size:1.25rem;font-weight:700;letter-spacing:1px;color:#fff;}
+.logo p{font-size:0.62rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;}
+.hdr-r{display:flex;align-items:center;gap:10px;}
+.live{display:flex;align-items:center;gap:5px;font-family:'IBM Plex Mono',monospace;font-size:0.7rem;color:var(--c2);}
+.pulse{width:7px;height:7px;border-radius:50%;background:var(--c2);animation:pulse 1.5s infinite;}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+#lastUp{font-family:'IBM Plex Mono',monospace;font-size:0.63rem;color:var(--muted);}
+.rbtn{background:transparent;border:1px solid var(--border);color:var(--c1);padding:5px 11px;border-radius:6px;font-size:0.68rem;cursor:pointer;font-family:'IBM Plex Mono',monospace;white-space:nowrap;}
+.rbtn:hover{background:rgba(59,130,246,0.1);}
+.search-wrap{position:relative;display:flex;align-items:center;}
+.search-icon{position:absolute;left:8px;color:#64748b;font-size:11px;pointer-events:none;}
+#searchBox{background:#1e293b;border:1px solid #3b82f6;color:#f1f5f9;padding:5px 10px 5px 25px;border-radius:6px;font-size:0.67rem;font-family:'IBM Plex Mono',monospace;width:185px;outline:none;}
+#searchBox:focus{border-color:#60a5fa;box-shadow:0 0 0 2px rgba(59,130,246,0.2);}
+#searchBox::placeholder{color:#94a3b8;}
+
+.fbar{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:9px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;}
+.fg{display:flex;align-items:center;gap:7px;}
+.fl{font-size:0.62rem;text-transform:uppercase;letter-spacing:1.3px;color:#f1f5f9;font-weight:600;white-space:nowrap;}
+.fs{background:var(--hdr);border:1px solid var(--border);color:#f1f5f9;padding:4px 8px;border-radius:5px;font-size:0.67rem;font-family:'IBM Plex Mono',monospace;cursor:pointer;outline:none;}
+.fs:focus{border-color:var(--c1);}
+.frst{margin-left:auto;background:transparent;border:1px solid var(--border);color:#f1f5f9;padding:4px 10px;border-radius:5px;font-size:0.64rem;cursor:pointer;font-family:'IBM Plex Mono',monospace;}
+.frst:hover{border-color:var(--c3);color:var(--c3);}
+.fcnt{font-family:'IBM Plex Mono',monospace;font-size:0.62rem;color:var(--c4);background:rgba(250,204,21,0.1);padding:2px 8px;border-radius:4px;border:1px solid rgba(250,204,21,0.2);}
+
+main{padding:13px 22px;display:flex;flex-direction:column;gap:11px;}
+
+.krow{display:grid;grid-template-columns:repeat(7,1fr);gap:9px;}
+.kpi{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:11px 13px;border-top:2px solid;}
+.klbl{font-size:0.58rem;text-transform:uppercase;letter-spacing:1.3px;color:#f1f5f9;margin-bottom:5px;font-weight:600;}
+.kval{font-family:'Rajdhani',sans-serif;font-size:1.75rem;font-weight:700;line-height:1;}
+.ksub{font-size:0.58rem;color:var(--muted);margin-top:3px;}
+
+.row{display:grid;gap:11px;}
+.r3{grid-template-columns:1fr 1fr 1fr;}
+.r2{grid-template-columns:1fr 1fr;}
+.panel{background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:12px 14px;}
+.pt{font-family:'Rajdhani',sans-serif;font-size:0.8rem;font-weight:700;text-transform:uppercase;letter-spacing:1.3px;color:#f1f5f9;margin-bottom:8px;display:flex;align-items:center;gap:6px;}
+.pt .ac{color:var(--c1);}
+canvas{width:100%!important;}
+
+.dwrap{display:flex;align-items:center;gap:12px;padding:4px 0;}
+.dwrap canvas{max-width:110px;max-height:110px;flex-shrink:0;}
+.dleg{display:flex;flex-direction:column;gap:5px;flex:1;}
+.dli{display:flex;align-items:center;gap:6px;font-size:0.68rem;color:#f1f5f9;}
+.dlid{width:8px;height:8px;border-radius:2px;flex-shrink:0;}
+.dlip{margin-left:auto;font-weight:700;font-size:0.68rem;white-space:nowrap;}
+
+.gwrap{display:flex;flex-direction:column;align-items:center;gap:2px;}
+.gwrap canvas{max-width:160px;max-height:90px;}
+.gval{font-family:'Rajdhani',sans-serif;font-size:2rem;font-weight:700;line-height:1;}
+.glbl{font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;}
+
+.tbl{width:100%;border-collapse:collapse;font-size:0.68rem;}
+.tbl th{text-align:left;font-size:0.6rem;text-transform:uppercase;letter-spacing:.9px;color:#f1f5f9;padding:5px 7px;border-bottom:1px solid var(--border);font-weight:600;}
+.tbl td{padding:5px 7px;border-bottom:1px solid #0a0f1e;color:#cbd5e1;font-family:'IBM Plex Mono',monospace;font-size:0.64rem;}
+.tbl tr:hover td{background:rgba(59,130,246,0.05);}
+.tbl .highlight td{background:rgba(250,204,21,0.06);}
+.badge{display:inline-block;padding:1px 6px;border-radius:3px;font-size:0.56rem;font-weight:700;text-transform:uppercase;letter-spacing:.4px;}
+.bvh{background:rgba(248,113,113,.2);color:#f87171;}
+.bhi{background:rgba(251,146,60,.15);color:#fb923c;}
+.bno{background:rgba(59,130,246,.15);color:#60a5fa;}
+.blo{background:rgba(100,116,139,.15);color:#94a3b8;}
+.bop{background:rgba(250,204,21,.12);color:#facc15;}
+.brp{background:rgba(74,222,128,.12);color:#4ade80;}
+.bcl{background:rgba(56,189,248,.12);color:#38bdf8;}
+.bag{background:rgba(248,113,113,.15);color:#f87171;}
+.bne{background:rgba(100,116,139,.15);color:#94a3b8;}
+.bpo{background:rgba(74,222,128,.12);color:#4ade80;}
+
+.si{display:flex;align-items:center;gap:9px;padding:5px 0;border-bottom:1px solid #0a0f1e;}
+.sbw{flex:1;background:#0a0f1e;border-radius:2px;height:4px;overflow:hidden;}
+.sba{height:100%;background:var(--c1);border-radius:2px;}
+.sn{font-size:0.67rem;color:#cbd5e1;flex:0 0 auto;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.sc{font-family:'Rajdhani',sans-serif;font-size:0.9rem;font-weight:700;color:var(--c1);min-width:18px;text-align:right;}
+.nodata{display:flex;align-items:center;justify-content:center;height:100px;color:var(--muted);font-size:0.72rem;flex-direction:column;gap:6px;}
+
+/* Search highlight */
+.srch-match{background:rgba(250,204,21,0.15);border-left:2px solid var(--c4);}
+
+footer{text-align:center;padding:12px;font-size:0.62rem;color:var(--muted);border-top:1px solid var(--border);font-family:'IBM Plex Mono',monospace;margin-top:6px;}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🏠</div>
+    <div><h1>SmartHome Pro X200</h1><p>AI Customer Support Intelligence</p></div>
+  </div>
+  <div class="hdr-r">
+    <div class="live"><div class="pulse"></div>LIVE</div>
+    <div id="lastUp">Loading…</div>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input type="text" id="searchBox" placeholder="Search tickets…" oninput="applyFilters()">
+    </div>
+    <button class="rbtn" onclick="exportCSV()" style="color:#4ade80;border-color:#1e5c35;">⬇ Export CSV</button>
+    <button class="rbtn" onclick="loadData()">⟳ Refresh</button>
+  </div>
+</header>
+
+<main>
+
+<div class="fbar">
+  <div class="fg"><span class="fl">⚡ Priority</span><select class="fs" id="fP" onchange="applyFilters()"><option value="">All</option><option>Very High</option><option>High</option><option>Normal</option><option>Low</option></select></div>
+  <div class="fg"><span class="fl">😊 Sentiment</span><select class="fs" id="fS" onchange="applyFilters()"><option value="">All</option><option>Angry</option><option>Neutral</option><option>Positive</option></select></div>
+  <div class="fg"><span class="fl">🔖 Status</span><select class="fs" id="fSt" onchange="applyFilters()"><option value="">All</option><option>Open</option><option>Replied</option><option>Closed</option></select></div>
+  <div class="fg"><span class="fl">🌐 Language</span><select class="fs" id="fL" onchange="applyFilters()"><option value="">All</option></select></div>
+  <div class="fg"><span class="fl">📅 Period</span>
+    <select class="fs" id="fDate" onchange="onPeriodChange()">
+      <option value="">All Time</option>
+      <option value="today">Today</option>
+      <option value="week">This Week</option>
+      <option value="month">This Month</option>
+      <option value="year">This Year</option>
+      <option value="custom">Custom Range</option>
+    </select>
+  </div>
+  <div id="customRange" style="display:none;align-items:center;gap:6px;">
+    <span class="fl">From</span><input type="date" class="fs" id="fFrom" onchange="applyFilters()" style="padding:3px 7px;">
+    <span class="fl">To</span><input type="date" class="fs" id="fTo" onchange="applyFilters()" style="padding:3px 7px;">
+  </div>
+  <div id="fcnt" style="display:none" class="fcnt">Filtered</div>
+  <button class="frst" onclick="resetFilters()">✕ Reset</button>
+</div>
+
+<!-- KPI ROW — 7 cards including Avg Resolution Time -->
+<div class="krow">
+  <div class="kpi" style="border-top-color:#3b82f6"><div class="klbl">Total Tickets</div><div class="kval" style="color:#3b82f6" id="kT">—</div><div class="ksub">All time</div></div>
+  <div class="kpi" style="border-top-color:#f87171"><div class="klbl">Escalations</div><div class="kval" style="color:#f87171" id="kE">—</div><div class="ksub">Needs human</div></div>
+  <div class="kpi" style="border-top-color:#4ade80"><div class="klbl">Resolution Rate</div><div class="kval" style="color:#4ade80" id="kR">—</div><div class="ksub">Auto-resolved %</div></div>
+  <div class="kpi" style="border-top-color:#facc15"><div class="klbl">SLA Compliance</div><div class="kval" style="color:#facc15" id="kSla">—</div><div class="ksub">Within SLA %</div></div>
+  <div class="kpi" style="border-top-color:#a78bfa"><div class="klbl">Open Tickets</div><div class="kval" style="color:#a78bfa" id="kO">—</div><div class="ksub">Pending</div></div>
+  <div class="kpi" style="border-top-color:#38bdf8"><div class="klbl">Avg RAG Score</div><div class="kval" style="color:#38bdf8" id="kRag">—</div><div class="ksub">Escalation confidence</div></div>
+  <div class="kpi" style="border-top-color:#fb923c"><div class="klbl">Avg Resolution</div><div class="kval" style="color:#fb923c" id="kRes">—</div><div class="ksub">Minutes avg</div></div>
+</div>
+
+<div class="row r3">
+  <div class="panel">
+    <div class="pt">🐟 <span class="ac">Fishbone</span> Root Cause</div>
+    <canvas id="fishChart" height="140"></canvas>
+  </div>
+  <div class="panel">
+    <div class="pt">⚡ <span class="ac">Priority</span> Distribution</div>
+    <div class="dwrap"><canvas id="priChart" height="110"></canvas><div class="dleg" id="priLeg"></div></div>
+  </div>
+  <div class="panel">
+    <div class="pt">😊 <span class="ac">Sentiment</span> Analysis</div>
+    <div class="dwrap"><canvas id="senChart" height="110"></canvas><div class="dleg" id="senLeg"></div></div>
+  </div>
+</div>
+
+<div class="row r3">
+  <div class="panel">
+    <div class="pt">📈 <span class="ac">Volume</span> Trend (Daily)</div>
+    <canvas id="volChart" height="140"></canvas>
+  </div>
+  <div class="panel">
+    <div class="pt">📨 <span class="ac">Reply Type</span> Breakdown</div>
+    <div class="dwrap"><canvas id="repChart" height="110"></canvas><div class="dleg" id="repLeg"></div></div>
+  </div>
+  <div class="panel">
+    <div class="pt">🔖 <span class="ac">Status</span> Breakdown</div>
+    <div class="dwrap"><canvas id="stChart" height="110"></canvas><div class="dleg" id="stLeg"></div></div>
+  </div>
+</div>
+
+<div class="row r3">
+  <div class="panel">
+    <div class="pt">🌐 <span class="ac">Language</span> Distribution</div>
+    <div class="dwrap"><canvas id="lanChart" height="110"></canvas><div class="dleg" id="lanLeg"></div></div>
+  </div>
+  <div class="panel">
+    <div class="pt">🎯 <span class="ac">Resolution Rate</span> Gauge</div>
+    <div class="gwrap">
+      <canvas id="gauChart" height="90"></canvas>
+      <div class="gval" id="gVal">—%</div>
+      <div class="glbl">Automated Resolution Rate</div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="pt">🤖 <span class="ac">RAG</span> Confidence Trend</div>
+    <canvas id="ragChart" height="140"></canvas>
+  </div>
+</div>
+
+<div class="row r2">
+  <div class="panel">
+    <div class="pt">🔍 <span class="ac">Top</span> Subjects</div>
+    <div id="subjList"></div>
+  </div>
+  <div class="panel">
+    <div class="pt" style="justify-content:space-between;">
+      <span>🎫 <span class="ac">Recent</span> Tickets</span>
+      <span id="tblCount" style="font-size:0.62rem;color:var(--muted);font-weight:400;letter-spacing:0;text-transform:none;font-family:'IBM Plex Mono',monospace;"></span>
+    </div>
+    <div style="overflow-x:auto">
+      <table class="tbl">
+        <thead><tr><th>Ticket</th><th>Sender</th><th>Subject</th><th>Priority</th><th>Sentiment</th><th>Status</th><th>Res.Time</th><th>Lang</th></tr></thead>
+        <tbody id="tblBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+<footer>SmartHome Pro X200 AI Customer Support Dashboard &nbsp;|&nbsp; 72.61.178.139:8080 &nbsp;|&nbsp; N8N + AutoGen + Pinecone + Flask &nbsp;|&nbsp; © 2026 Monic Pradeep</footer>
+
+<script>
+Chart.register(ChartDataLabels);
+Chart.defaults.color='#94a3b8';
+Chart.defaults.borderColor='#1e293b';
+Chart.defaults.font.family="'IBM Plex Sans',sans-serif";
+
+const C1='#3b82f6',C2='#4ade80',C3='#f87171',C4='#facc15',C5='#a78bfa',C6='#38bdf8',C7='#fb923c';
+const PAL=[C1,C2,C3,C4,C5,C6,C7];
+const BDR='#1e293b';
+let charts={}, raw=null, currentFiltered=[];
+
+function dc(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+
+function mkDonut(id,labels,values,colors,legId){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  const total=values.reduce((a,b)=>a+b,0);
+  const cols=colors||PAL;
+  charts[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{labels,datasets:[{data:values,backgroundColor:cols,borderWidth:2,borderColor:'#0d1224',hoverOffset:4}]},
+    options:{responsive:true,cutout:'55%',plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>` ${c.label}: ${c.raw} (${Math.round(c.raw/total*100)}%)`}},
+      datalabels:{display:ctx=>Math.round(ctx.dataset.data[ctx.dataIndex]/total*100)>=8,
+        color:'#ffffff',font:{weight:'bold',size:10},
+        formatter:(v)=>{const p=Math.round(v/total*100);return p+'%\n'+v;}}}}
+  });
+  if(legId){
+    const el=document.getElementById(legId);
+    el.innerHTML=labels.map((l,i)=>{
+      const pct=Math.round(values[i]/total*100);
+      return `<div class="dli"><div class="dlid" style="background:${cols[i%cols.length]}"></div><span style="flex:1">${l}</span><span class="dlip" style="color:${cols[i%cols.length]}">${values[i]} (${pct}%)</span></div>`;
+    }).join('');
+  }
+}
+
+function mkBar(id,labels,values,color){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  charts[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data:values,backgroundColor:color+'99',borderColor:color,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}`}},
+      datalabels:{color:'#f1f5f9',anchor:'end',align:'top',font:{size:9,weight:'bold'},formatter:v=>v}},
+      scales:{x:{grid:{color:BDR},ticks:{color:'#f1f5f9',font:{size:9}}},
+        y:{grid:{color:BDR},ticks:{color:'#f1f5f9',font:{size:9},stepSize:1},grace:'25%'}}}
+  });
+}
+
+function mkLine(id,labels,values,color){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  charts[id]=new Chart(ctx,{
+    type:'line',
+    data:{labels,datasets:[{data:values,borderColor:color,backgroundColor:color+'22',fill:true,tension:0.4,pointBackgroundColor:color,pointRadius:5,borderWidth:2}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw}`}},
+      datalabels:{color:'#f1f5f9',anchor:'top',align:'top',font:{size:9,weight:'bold'},formatter:v=>v.toFixed(3)}},
+      scales:{x:{grid:{color:BDR},ticks:{color:'#f1f5f9',font:{size:9}}},
+        y:{grid:{color:BDR},ticks:{color:'#f1f5f9',font:{size:9}},min:0,max:1}}}
+  });
+}
+
+function mkGauge(id,value){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  const col=value>=75?C2:value>=50?C4:C3;
+  charts[id]=new Chart(ctx,{
+    type:'doughnut',
+    data:{datasets:[{data:[value,100-value],backgroundColor:[col,'#1e293b'],borderWidth:0}]},
+    options:{responsive:true,rotation:-90,circumference:180,cutout:'72%',
+      plugins:{legend:{display:false},tooltip:{enabled:false},datalabels:{display:false}}}
+  });
+  const el=document.getElementById('gVal');
+  el.textContent=value+'%';el.style.color=col;
+}
+
+function mkFish(id,labels,values){
+  dc(id);
+  const ctx=document.getElementById(id).getContext('2d');
+  charts[id]=new Chart(ctx,{
+    type:'bar',
+    data:{labels,datasets:[{data:values,backgroundColor:PAL,borderColor:PAL,borderWidth:1,borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.raw} tickets`}},
+      datalabels:{color:'#f1f5f9',anchor:'end',align:'top',font:{size:9,weight:'bold'},formatter:v=>v>0?v:''}},
+      scales:{x:{grid:{color:BDR},ticks:{color:'#f1f5f9',font:{size:8},maxRotation:30}},
+        y:{grid:{color:BDR},ticks:{color:'#f1f5f9',font:{size:9},stepSize:1},beginAtZero:true,grace:'25%'}}}
+  });
+}
+
+function noData(id){
+  const c=document.getElementById(id);if(!c)return;
+  dc(id);
+  const ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);
+  ctx.fillStyle='#64748b';ctx.font='11px IBM Plex Mono';ctx.textAlign='center';
+  ctx.fillText('No data yet',c.width/2,c.height/2);
+}
+
+function bdwn(rows,key){
+  const d={};rows.forEach(r=>{const v=r[key]||'Unknown';d[v]=(d[v]||0)+1;});return d;
+}
+
+function pClass(p){if(!p)return'bno';const l=p.toLowerCase();if(l.includes('very'))return'bvh';if(l.includes('high'))return'bhi';if(l.includes('normal'))return'bno';return'blo';}
+function sClass(s){if(!s)return'bne';const l=s.toLowerCase();if(l.includes('angry'))return'bag';if(l.includes('positive'))return'bpo';return'bne';}
+function stClass(s){if(!s)return'bne';const l=s.toLowerCase();if(l==='open')return'bop';if(l==='replied')return'brp';return'bcl';}
+function sid(id){return id?'#'+String(id).slice(-6):'—';}
+function fmtMin(m){if(!m||isNaN(m))return'—';if(m<60)return Math.round(m)+'m';return(m/60).toFixed(1)+'h';}
+
+function renderTable(tickets, query){
+  const tb=document.getElementById('tblBody');
+  const cnt=document.getElementById('tblCount');
+  if(!tickets||!tickets.length){
+    tb.innerHTML=`<tr><td colspan="8" style="text-align:center;color:var(--muted);padding:16px">No tickets found</td></tr>`;
+    cnt.textContent='';return;
+  }
+  cnt.textContent=`Showing ${tickets.length} ticket${tickets.length!==1?'s':''}`;
+  const q=(query||'').toLowerCase();
+  tb.innerHTML=tickets.map(t=>{
+    const subj=t.subject||'—';
+    const sender=t.sender_name||'?';
+    const isMatch=q&&(subj.toLowerCase().includes(q)||sender.toLowerCase().includes(q)||(t.ticket_id||'').includes(q));
+    const resTime=parseFloat(t.resolution_time_mi||t.resolution_time_min||0);
+    return `<tr class="${isMatch?'srch-match':''}">
+      <td style="color:${C1}">${sid(t.ticket_id)}</td>
+      <td>${sender.substring(0,13)}</td>
+      <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${subj}">${subj.substring(0,24)}</td>
+      <td><span class="badge ${pClass(t.priority)}">${t.priority||'—'}</span></td>
+      <td><span class="badge ${sClass(t.sentiment)}">${t.sentiment||'—'}</span></td>
+      <td><span class="badge ${stClass(t.status)}">${t.status||'—'}</span></td>
+      <td style="color:${C7};font-size:0.62rem">${fmtMin(resTime)}</td>
+      <td style="color:${C5}">${(t.language||'?').toUpperCase()}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderSubjects(subjects){
+  const el=document.getElementById('subjList');
+  if(!subjects||!subjects.length){el.innerHTML='<div class="nodata">No data yet</div>';return;}
+  const max=subjects[0][1];
+  el.innerHTML=subjects.map(([n,c])=>`<div class="si"><span class="sn" title="${n}">${n}</span><div class="sbw"><div class="sba" style="width:${Math.round(c/max*100)}%"></div></div><span class="sc">${c}</span></div>`).join('');
+}
+
+function renderAll(emails, query){
+  if(!raw)return;
+  currentFiltered=emails;
+  const total=emails.length;
+  const esc=raw.kpis.escalations;
+  const rr=total?Math.round((total-Math.min(esc,total))/total*100):0;
+
+  // Avg resolution time
+  const resVals=emails.map(r=>parseFloat(r.resolution_time_mi||r.resolution_time_min||0)).filter(v=>v>0);
+  const avgRes=resVals.length?Math.round(resVals.reduce((a,b)=>a+b,0)/resVals.length):0;
+
+  document.getElementById('kT').textContent=total;
+  document.getElementById('kE').textContent=esc;
+  document.getElementById('kR').textContent=rr+'%';
+  document.getElementById('kSla').textContent=raw.kpis.sla_compliance+'%';
+  document.getElementById('kO').textContent=emails.filter(r=>r.status==='Open').length;
+  document.getElementById('kRag').textContent=raw.kpis.avg_rag_score>0?raw.kpis.avg_rag_score:'—';
+  document.getElementById('kRes').textContent=avgRes>0?fmtMin(avgRes):'—';
+  document.getElementById('lastUp').textContent=raw.last_updated?'Updated: '+new Date(raw.last_updated).toLocaleTimeString():'—';
+
+  // Fishbone
+  const fb={"Connectivity":0,"LED/Hardware":0,"Setup":0,"Device Limit":0,"Alexa/Voice":0,"Billing":0,"Other":0};
+  const kw={"connect":"Connectivity","internet":"Connectivity","wifi":"Connectivity","led":"LED/Hardware","broken":"LED/Hardware","hardware":"LED/Hardware","setup":"Setup","install":"Setup","reset":"Setup","device":"Device Limit","limit":"Device Limit","alexa":"Alexa/Voice","voice":"Alexa/Voice","refund":"Billing","billing":"Billing","charge":"Billing"};
+  emails.forEach(r=>{const s=((r.subject||'')+' '+(r.body_preview||'')).toLowerCase();let m=false;for(const[k,c]of Object.entries(kw)){if(s.includes(k)){fb[c]++;m=true;break;}}if(!m)fb['Other']++;});
+  const fbe=Object.entries(fb).filter(([,v])=>v>0);
+  if(fbe.length)mkFish('fishChart',fbe.map(([k])=>k),fbe.map(([,v])=>v));
+  else noData('fishChart');
+
+  const pri=bdwn(emails,'priority');
+  if(Object.keys(pri).length)mkDonut('priChart',Object.keys(pri),Object.values(pri),[C3,C7,C1,C2,C5],'priLeg');
+  else noData('priChart');
+
+  const sen=bdwn(emails,'sentiment');
+  if(Object.keys(sen).length)mkDonut('senChart',Object.keys(sen),Object.values(sen),[C3,'#475569',C2,C4],'senLeg');
+  else noData('senChart');
+
+  const vol={};
+  emails.forEach(r=>{try{const ts=parseInt(r.received_at||0);const d=new Date(ts).toLocaleDateString('en-US',{month:'2-digit',day:'2-digit'});vol[d]=(vol[d]||0)+1;}catch(e){}});
+  const days=Object.keys(vol).sort();
+  if(days.length)mkBar('volChart',days,days.map(k=>vol[k]),C1);
+  else noData('volChart');
+
+  const rt=raw.reply_types||{};
+  if(Object.keys(rt).length)mkDonut('repChart',Object.keys(rt),Object.values(rt),[C2,C4,C3,C1],'repLeg');
+  else noData('repChart');
+
+  const st=bdwn(emails,'status');
+  if(Object.keys(st).length)mkDonut('stChart',Object.keys(st),Object.values(st),[C4,C2,C6,C3],'stLeg');
+  else noData('stChart');
+
+  const lanRaw=bdwn(emails,'language');
+  const lan={};
+  // Only show valid 2-letter ISO codes — skip bad expression values
+  Object.entries(lanRaw).forEach(([k,v])=>{
+    if(/^[a-z]{2}$/i.test(k.trim())) lan[langName(k.trim().toLowerCase())]=v;
+  });
+  if(Object.keys(lan).length)mkDonut('lanChart',Object.keys(lan),Object.values(lan),[C6,C1,C4,C2,C5],'lanLeg');
+  else noData('lanChart');
+
+  mkGauge('gauChart',rr);
+
+  if(raw.rag_trend&&raw.rag_trend.length){
+    const sorted=[...raw.rag_trend].sort((a,b)=>a.day.localeCompare(b.day));
+    mkLine('ragChart',sorted.map(r=>r.day),sorted.map(r=>r.score),C5);
+  } else noData('ragChart');
+
+  const subj={};
+  emails.forEach(r=>{const s=(r.subject||'Unknown').substring(0,40);subj[s]=(subj[s]||0)+1;});
+  renderSubjects(Object.entries(subj).sort((a,b)=>b[1]-a[1]).slice(0,5));
+
+  // Table — search filter applies to ALL data, charts update too
+  let tableRows=[...emails].sort((a,b)=>parseInt(b.ticket_id||0)-parseInt(a.ticket_id||0));
+  const q=(query||'').toLowerCase();
+  if(q){
+    tableRows=tableRows.filter(r=>(r.subject||'').toLowerCase().includes(q)||(r.sender_name||'').toLowerCase().includes(q)||(r.ticket_id||'').includes(q)||(r.sender_email||'').toLowerCase().includes(q));
+  }
+  renderTable(tableRows.slice(0,20), query);
+}
+
+function onPeriodChange(){
+  const val=document.getElementById('fDate').value;
+  const cr=document.getElementById('customRange');
+  cr.style.display=val==='custom'?'flex':'none';
+  applyFilters();
+}
+
+function applyFilters(){
+  if(!raw){loadData();return;}
+  const fp=document.getElementById('fP').value;
+  const fs=document.getElementById('fS').value;
+  const fst=document.getElementById('fSt').value;
+  const fl=document.getElementById('fL').value;
+  const fd=document.getElementById('fDate').value;
+  const fFrom=document.getElementById('fFrom').value;
+  const fTo=document.getElementById('fTo').value;
+  const query=document.getElementById('searchBox').value.trim();
+  const has=fp||fs||fst||fl||fd||query;
+  document.getElementById('fcnt').style.display=has?'inline':'none';
+
+  let emails=[...(raw.all_emails||[])];
+  if(fp)emails=emails.filter(r=>(r.priority||'').toLowerCase()===fp.toLowerCase());
+  if(fs)emails=emails.filter(r=>(r.sentiment||'').toLowerCase()===fs.toLowerCase());
+  if(fst)emails=emails.filter(r=>(r.status||'').toLowerCase()===fst.toLowerCase());
+  if(fl)emails=emails.filter(r=>(r.language||'').toLowerCase()===fl.toLowerCase());
+  if(fd){
+    const now=new Date(); let startMs=null, endMs=Date.now();
+    if(fd==='today'){const d=new Date(now);d.setHours(0,0,0,0);startMs=d.getTime();}
+    else if(fd==='week'){const d=new Date(now);d.setDate(d.getDate()-7);startMs=d.getTime();}
+    else if(fd==='month'){const d=new Date(now);d.setMonth(d.getMonth()-1);startMs=d.getTime();}
+    else if(fd==='year'){const d=new Date(now);d.setFullYear(d.getFullYear()-1);startMs=d.getTime();}
+    else if(fd==='custom'){if(fFrom)startMs=new Date(fFrom).getTime();if(fTo)endMs=new Date(fTo).getTime()+86400000;}
+    if(startMs!==null)emails=emails.filter(r=>{const ts=parseInt(r.received_at||0);return ts>=startMs&&ts<=endMs;});
+  }
+  // Search filters ALL charts — not just the table
+  if(query){
+    const q=query.toLowerCase();
+    emails=emails.filter(r=>(r.subject||'').toLowerCase().includes(q)||(r.sender_name||'').toLowerCase().includes(q)||(r.ticket_id||'').includes(q)||(r.sender_email||'').toLowerCase().includes(q)||(r.body_preview||'').toLowerCase().includes(q));
+  }
+  renderAll(emails, query);
+}
+
+function resetFilters(){
+  ['fP','fS','fSt','fL','fDate','fFrom','fTo'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('searchBox').value='';
+  document.getElementById('fcnt').style.display='none';
+  document.getElementById('customRange').style.display='none';
+  if(raw)renderAll(raw.all_emails||[]);
+}
+
+// ── EXPORT CSV ──────────────────────────────────────────────────────────────
+function exportCSV(){
+  const emails=currentFiltered.length?currentFiltered:(raw?raw.all_emails||[]:[]);
+  if(!emails.length){alert('No data to export!');return;}
+  const cols=['ticket_id','received_at','sender_name','sender_email','subject','priority','sentiment','language','status','rag_score','resolution_time_mi','sla_breached'];
+  const header=cols.join(',');
+  const rows=emails.map(r=>cols.map(c=>{
+    const v=r[c]||'';
+    return typeof v==='string'&&v.includes(',')?`"${v}"`:v;
+  }).join(','));
+  const csv=[header,...rows].join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  const now=new Date();
+  a.href=url;
+  a.download=`smarthome_tickets_${now.toISOString().slice(0,10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Language code to full name map
+const LANG_NAMES={'en':'English','de':'German','fr':'French','es':'Spanish',
+  'hi':'Hindi','ar':'Arabic','pt':'Portuguese','it':'Italian',
+  'zh':'Chinese','ja':'Japanese','ko':'Korean','ru':'Russian',
+  'nl':'Dutch','pl':'Polish','tr':'Turkish','sv':'Swedish'};
+function langName(code){return LANG_NAMES[code.toLowerCase()]||code.toUpperCase();}
+
+function populateLangFilter(emails){
+  const sel=document.getElementById('fL');
+  const current=sel.value;
+  // Only valid 2-letter ISO codes — filter out bad expression values
+  const langs=[...new Set(emails.map(r=>(r.language||'').toLowerCase().trim())
+    .filter(code=>code&&/^[a-z]{2}$/.test(code)))].sort();
+  sel.innerHTML='<option value="">All</option>';
+  langs.forEach(code=>{
+    const opt=document.createElement('option');
+    opt.value=code; opt.textContent=langName(code)+' ('+code.toUpperCase()+')';
+    sel.appendChild(opt);
+  });
+  if(current&&langs.includes(current))sel.value=current;
+}
+
+async function loadData(){
+  try{
+    const res=await fetch('/api/stats');
+    const d=await res.json();
+    raw=d;
+    populateLangFilter(raw.all_emails||[]);
+    applyFilters();
+  }catch(err){
+    console.error(err);
+    document.getElementById('lastUp').textContent='⚠ Failed to load';
+  }
+}
+
+loadData();
+setInterval(loadData,30000);
+</script>
+</body>
+</html>

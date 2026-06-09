@@ -1,0 +1,37 @@
+# ─────────────────────────────────────────────
+# NebenkostenCheck — Docker Compose (reference)
+# Services join the shared external Traefik network.
+# Service names are nkc-* to stay globally unique
+# on n8n_default (DNS collision lesson learned).
+# ─────────────────────────────────────────────
+
+services:
+  nkc-backend:
+    build: ./backend
+    container_name: nkc-backend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nkc-api.rule=Host(`nebenkostencheck-ai.de`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.nkc-api.entrypoints=websecure"
+      - "traefik.http.routers.nkc-api.tls.certresolver=mytlschallenge"
+
+  nkc-frontend:
+    build: ./frontend
+    container_name: nkc-frontend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nkc-web.rule=Host(`nebenkostencheck-ai.de`)"
+      - "traefik.http.routers.nkc-web.entrypoints=websecure"
+      - "traefik.http.routers.nkc-web.tls.certresolver=mytlschallenge"
+
+networks:
+  n8n_default:
+    external: true

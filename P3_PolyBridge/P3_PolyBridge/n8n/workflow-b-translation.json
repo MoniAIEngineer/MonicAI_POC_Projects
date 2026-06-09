@@ -1,0 +1,126 @@
+{
+  "name": "PolyBridge — Workflow B — Translation Core",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": ["message"]
+      },
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1,
+      "position": [200, 300],
+      "notes": "SOLE Telegram Trigger for this bot. One webhook per bot. If the bot token is rotated, this node must re-register the webhook under the new token."
+    },
+    {
+      "parameters": {
+        "functionCode": "// Enforce 20/day per user. Admin chat IDs (Phase 2A) are exempt.\n// Pseudocode — wire to your counter store.\nreturn items;"
+      },
+      "name": "Rate Limit (20/day)",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "dataType": "string",
+        "value1": "={{ $json.message_type }}",
+        "rules": {
+          "rules": [
+            { "value2": "text", "output": 0 },
+            { "value2": "voice", "output": 1 },
+            { "value2": "photo", "output": 2 }
+          ]
+        }
+      },
+      "name": "Route by Type",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 1,
+      "position": [600, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/transcriptions",
+        "notes": "Whisper transcription for voice notes."
+      },
+      "name": "Whisper Transcribe",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [820, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "notes": "Vision OCR — read text from the photo."
+      },
+      "name": "Vision OCR",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [820, 460]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "notes": "GPT-4o-mini — translate to the user's target language."
+      },
+      "name": "Translate (GPT-4o-mini)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1040, 380]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/audio/speech",
+        "notes": "Optional TTS — speak the translated result back."
+      },
+      "name": "TTS (optional)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1260, 460]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $credentials.telegramToken }}/sendMessage",
+        "notes": "Return translated text (or sendVoice for TTS replies)."
+      },
+      "name": "Reply to User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [1480, 380]
+    }
+  ],
+  "connections": {
+    "Telegram Trigger": {
+      "main": [[{ "node": "Rate Limit (20/day)", "type": "main", "index": 0 }]]
+    },
+    "Rate Limit (20/day)": {
+      "main": [[{ "node": "Route by Type", "type": "main", "index": 0 }]]
+    },
+    "Route by Type": {
+      "main": [
+        [{ "node": "Translate (GPT-4o-mini)", "type": "main", "index": 0 }],
+        [{ "node": "Whisper Transcribe", "type": "main", "index": 0 }],
+        [{ "node": "Vision OCR", "type": "main", "index": 0 }]
+      ]
+    },
+    "Whisper Transcribe": {
+      "main": [[{ "node": "Translate (GPT-4o-mini)", "type": "main", "index": 0 }]]
+    },
+    "Vision OCR": {
+      "main": [[{ "node": "Translate (GPT-4o-mini)", "type": "main", "index": 0 }]]
+    },
+    "Translate (GPT-4o-mini)": {
+      "main": [[{ "node": "Reply to User", "type": "main", "index": 0 }]]
+    },
+    "TTS (optional)": {
+      "main": [[{ "node": "Reply to User", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "_comment": "Skeleton. This is the ONLY workflow that holds a Telegram Trigger. Credentials recreated inside N8N — no hardcoded tokens."
+}

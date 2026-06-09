@@ -1,0 +1,44 @@
+{
+  "name": "PolyBridge — Workflow C — Error Handler",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Error Trigger",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Set as the 'Error Workflow' for Workflows A & B in their settings. Does NOT register a Telegram webhook."
+    },
+    {
+      "parameters": {
+        "functionCode": "// Format the error context for logging/notification.\nconst err = items[0].json;\nreturn [{ json: {\n  workflow: err.workflow?.name,\n  node: err.execution?.lastNodeExecuted,\n  message: err.execution?.error?.message,\n  time: new Date().toISOString()\n}}];"
+      },
+      "name": "Format Error",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $credentials.telegramToken }}/sendMessage",
+        "notes": "Notify an admin chat of the failure."
+      },
+      "name": "Notify Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [[{ "node": "Format Error", "type": "main", "index": 0 }]]
+    },
+    "Format Error": {
+      "main": [[{ "node": "Notify Admin", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "_comment": "Skeleton. Register this as the Error Workflow for A & B. Credentials recreated inside N8N."
+}

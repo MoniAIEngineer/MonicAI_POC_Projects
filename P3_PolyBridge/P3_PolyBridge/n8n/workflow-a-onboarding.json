@@ -1,0 +1,66 @@
+{
+  "name": "PolyBridge — Workflow A — Onboarding & Language",
+  "nodes": [
+    {
+      "parameters": {},
+      "name": "Execute Workflow Trigger",
+      "type": "n8n-nodes-base.executeWorkflowTrigger",
+      "typeVersion": 1,
+      "position": [240, 300],
+      "notes": "Invoked internally by Workflow B. Does NOT register a Telegram webhook (one-webhook-per-bot rule)."
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            { "value1": "={{ $json.text }}", "operation": "equal", "value2": "/start" }
+          ]
+        }
+      },
+      "name": "Is /start ?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $credentials.telegramToken }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $json.chat_id }}" },
+            { "name": "text", "value": "🌐 Welcome to PolyBridge! Reply with your preferred language (e.g. 'English', 'Deutsch', 'हिंदी')." }
+          ]
+        }
+      },
+      "name": "Send Language Prompt",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 220]
+    },
+    {
+      "parameters": {
+        "functionCode": "// Persist the user's chosen language preference.\n// Replace with your storage of choice (N8N static data, DB, etc.).\nreturn items;"
+      },
+      "name": "Save Language Preference",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [680, 380]
+    }
+  ],
+  "connections": {
+    "Execute Workflow Trigger": {
+      "main": [[{ "node": "Is /start ?", "type": "main", "index": 0 }]]
+    },
+    "Is /start ?": {
+      "main": [
+        [{ "node": "Send Language Prompt", "type": "main", "index": 0 }],
+        [{ "node": "Save Language Preference", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "_comment": "Skeleton. Credentials are recreated inside N8N. This workflow must NOT hold a Telegram Trigger node."
+}

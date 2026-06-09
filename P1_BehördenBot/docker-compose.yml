@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────
+# BehördenBot — Docker Compose (reference)
+# Services join the shared external Traefik network.
+# Service names must be globally unique on n8n_default.
+# ─────────────────────────────────────────────
+
+services:
+  behoerdenbot-backend:
+    build: ./backend
+    container_name: behoerdenbot-backend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.behoerdenbot-api.rule=Host(`behoerdenbot.sbs`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.behoerdenbot-api.entrypoints=websecure"
+      - "traefik.http.routers.behoerdenbot-api.tls.certresolver=mytlschallenge"
+
+  behoerdenbot-frontend:
+    build: ./frontend
+    container_name: behoerdenbot-frontend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.behoerdenbot-web.rule=Host(`behoerdenbot.sbs`)"
+      - "traefik.http.routers.behoerdenbot-web.entrypoints=websecure"
+      - "traefik.http.routers.behoerdenbot-web.tls.certresolver=mytlschallenge"
+
+networks:
+  n8n_default:
+    external: true

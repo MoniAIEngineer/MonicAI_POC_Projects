@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────
+# RentScout — Docker Compose (reference)
+# Services join the shared external Traefik network.
+# Service names must be globally unique on n8n_default.
+# ─────────────────────────────────────────────
+
+services:
+  rentscout-backend:
+    build: ./backend
+    container_name: rentscout-backend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rentscout-api.rule=Host(`rentscout-ai.de`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.rentscout-api.entrypoints=websecure"
+      - "traefik.http.routers.rentscout-api.tls.certresolver=mytlschallenge"
+
+  rentscout-frontend:
+    build: ./frontend
+    container_name: rentscout-frontend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.rentscout-web.rule=Host(`rentscout-ai.de`)"
+      - "traefik.http.routers.rentscout-web.entrypoints=websecure"
+      - "traefik.http.routers.rentscout-web.tls.certresolver=mytlschallenge"
+
+networks:
+  n8n_default:
+    external: true

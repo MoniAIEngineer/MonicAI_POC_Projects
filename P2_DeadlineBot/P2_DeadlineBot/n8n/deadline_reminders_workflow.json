@@ -1,0 +1,73 @@
+{
+  "name": "DeadlineBot — Reminder Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      },
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select d.id, d.title, d.due_at, u.telegram_id from deadlines d join users u on u.id = d.user_id where d.reminder_sent = false and d.due_at <= now() + interval '1 hour';"
+      },
+      "name": "Query Due Deadlines",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [460, 300],
+      "notes": "Reads upcoming, unsent deadlines from Supabase Postgres."
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://api.telegram.org/bot{{ $env.TELEGRAM_BOT_TOKEN }}/sendMessage",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            { "name": "chat_id", "value": "={{ $json.telegram_id }}" },
+            { "name": "text", "value": "=⏰ Reminder: \"{{ $json.title }}\" is due at {{ $json.due_at }}." }
+          ]
+        }
+      },
+      "name": "Send Telegram Reminder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "update deadlines set reminder_sent = true where id = '{{ $json.id }}';"
+      },
+      "name": "Mark Reminder Sent",
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [[{ "node": "Query Due Deadlines", "type": "main", "index": 0 }]]
+    },
+    "Query Due Deadlines": {
+      "main": [[{ "node": "Send Telegram Reminder", "type": "main", "index": 0 }]]
+    },
+    "Send Telegram Reminder": {
+      "main": [[{ "node": "Mark Reminder Sent", "type": "main", "index": 0 }]]
+    }
+  },
+  "settings": {},
+  "active": false,
+  "_comment": "Skeleton workflow for reference. Re-create credentials inside your own N8N instance; do not hardcode tokens. Adjust schedule interval and reminder window to taste."
+}

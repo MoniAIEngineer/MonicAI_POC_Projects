@@ -1,0 +1,36 @@
+# ─────────────────────────────────────────────
+# DeadlineBot — Docker Compose (reference)
+# Services join the shared external Traefik network.
+# Service names must be globally unique on n8n_default.
+# ─────────────────────────────────────────────
+
+services:
+  deadlinebot-backend:
+    build: ./backend
+    container_name: deadlinebot-backend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.deadlinebot-api.rule=Host(`deadlinebot.sbs`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.deadlinebot-api.entrypoints=websecure"
+      - "traefik.http.routers.deadlinebot-api.tls.certresolver=mytlschallenge"
+
+  deadlinebot-frontend:
+    build: ./frontend
+    container_name: deadlinebot-frontend
+    restart: unless-stopped
+    env_file: .env
+    networks:
+      - n8n_default
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.deadlinebot-web.rule=Host(`deadlinebot.sbs`)"
+      - "traefik.http.routers.deadlinebot-web.entrypoints=websecure"
+      - "traefik.http.routers.deadlinebot-web.tls.certresolver=mytlschallenge"
+
+networks:
+  n8n_default:
+    external: true
